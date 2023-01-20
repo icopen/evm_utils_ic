@@ -1,0 +1,35 @@
+type TransactionType =
+variant {
+    Legacy: null;
+    EIP1559: null;
+    EIP2930: null;
+};
+
+type Entry = 
+record {
+    name: text;
+    val: vec text;
+};
+
+type Transaction = 
+record {
+    Type: TransactionType;
+    ChainId: nat64;
+    Nonce: nat64;
+    GasPrice: nat64;
+    GasLimit: nat64;
+    To: text;   
+    Value: nat64; 
+    Data: vec nat8;
+
+
+    MaxFeePerGas: opt nat64;
+    MaxPriorityFeePerGas: opt nat64;
+
+    AccessList: opt vec Entry;
+};
+
+service: () -> {
+    rlp_encode: (Item) -> (vec u8) query;
+    rlp_decode: (Item, vec u8) -> (Item) query;  
+};
