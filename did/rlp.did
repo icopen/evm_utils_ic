@@ -1,0 +1,18 @@
+type List = 
+record
+{
+    value: vec Item;
+};
+
+type Item = 
+variant {
+    text: text;
+    num: nat64;
+    list: List;
+    raw: vec nat8;
+}
+
+service: () -> {
+    rlp_encode: (Item) -> (vec u8) query;
+    rlp_decode: (Item, vec u8) -> (Item) query;  
+};
