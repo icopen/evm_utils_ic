@@ -80,6 +80,7 @@ impl Decodable for TransactionLegacy {
         }
 
         let nonce: u64 = rlp.val_at(0)?;
+
         let gas_price: u64 = rlp.val_at(1)?;
         let gas_limit: u64 = rlp.val_at(2)?;
 
@@ -133,16 +134,14 @@ impl Encodable for TransactionLegacy {
 mod test {
     use std::error::Error;
 
-    use super::{Transaction, TransactionLegacy};
+    use super::{Transaction};
 
     #[test]
-    fn decode_transaction() -> Result<(), Box<dyn Error>> {
+    fn decode_legacy_transaction() -> Result<(), Box<dyn Error>> {
         let data =  "f86d820144843b9aca0082520894b78777860637d56543da23312c7865024833f7d188016345785d8a0000802ba0e2539a5d9f056d7095bd19d6b77b850910eeafb71534ebd45159915fab202e91a007484420f3968697974413fc55d1142dc76285d30b1b9231ccb71ed1e720faae";
         let data = hex::decode(data)?;
 
-        let tt = Transaction::decode(&data)?;
-
-        // let item:TransactionLegacy = rlp::decode(&data)?;
+        Transaction::decode(&data)?;
 
         Ok(())
     }
