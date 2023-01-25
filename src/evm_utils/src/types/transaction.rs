@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::{self, Display}, io::Read,
+    fmt::{self, Display},
 };
 
 use bytes::BytesMut;
@@ -8,9 +8,7 @@ use ic_cdk::export::candid::{CandidType, Deserialize};
 use rlp::{Decodable, Encodable, RlpStream};
 use bytes::BufMut;
 
-use crate::utils::keccak256;
-
-use super::num::U256;
+use super::{address::Address, num::U256};
 
 #[derive(Debug)]
 pub enum TransactionError {
@@ -68,7 +66,7 @@ pub struct TransactionLegacy {
     pub nonce: u64,
     pub gas_price: u64,
     pub gas_limit: u64,
-    pub to: Vec<u8>,
+    pub to: Address,
     pub value: u64,
     pub data: Vec<u8>,
     pub v: Vec<u8>,
@@ -90,7 +88,7 @@ impl Decodable for TransactionLegacy {
         let gas_price: u64 = rlp.val_at(1)?;
         let gas_limit: u64 = rlp.val_at(2)?;
 
-        let to = rlp.val_at::<Vec<u8>>(3)?;
+        let to = rlp.val_at(3)?;
 
         let value: u64 = rlp.val_at(4)?;
         let data: Vec<u8> = rlp.val_at(5)?;
@@ -248,8 +246,10 @@ mod test {
         let data = hex::decode(data)?;
 
         let tx = Transaction::decode(&data)?;
-
-        Ok(())
+        match tx {
+            Transaction::Legacy(_) => Ok(()),
+            _ => panic!("Wrong transaction type")
+        }
     }
 
     #[test]
@@ -260,10 +260,9 @@ mod test {
         let tx = Transaction::decode(&data)?;
 
         let encoded = Transaction::encode(&tx)?;
-        assert_eq!(data, encoded);
-
         let encoded_hex = hex::encode(&encoded);
 
+        assert_eq!(data, encoded);
         assert_eq!(data_hex, &encoded_hex);
 
         Ok(())
