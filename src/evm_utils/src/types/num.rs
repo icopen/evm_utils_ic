@@ -1,11 +1,11 @@
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, Encodable, RlpStream, DecoderError, Rlp};
+use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct U256(pub [u8; 32]);
 impl U256 {
     pub fn zero() -> Self {
-        Self([0u8;32])
+        Self([0u8; 32])
     }
     pub fn leading_zeros(&self) -> usize {
         let mut count = 0;
@@ -50,10 +50,14 @@ impl U256 {
     #[inline]
     fn fits_word(&self) -> bool {
         let U256(ref arr) = self;
-        for i in 1..24 { if arr[i] != 0 { return false; } }
+        for i in 1..24 {
+            if arr[i] != 0 {
+                return false;
+            }
+        }
         return true;
     }
-} 
+}
 
 impl From<[u8; 32]> for U256 {
     #[inline]
@@ -93,20 +97,19 @@ impl Decodable for U256 {
             0 => Ok(U256::zero()),
             l if l <= 32 => {
                 if bytes[0] == 0 {
-                    return Err(DecoderError::RlpInvalidIndirection)
+                    return Err(DecoderError::RlpInvalidIndirection);
                 }
                 let mut res = U256::zero();
 
                 for (i, byte) in bytes.iter().enumerate().take(l) {
-                    res.0[32 - l+i] = *byte;
+                    res.0[32 - l + i] = *byte;
                 }
                 Ok(res)
-            },
+            }
             _ => Err(DecoderError::RlpIsTooBig),
         })
     }
 }
-
 
 #[cfg(test)]
 mod test {

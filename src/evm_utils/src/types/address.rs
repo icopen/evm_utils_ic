@@ -1,7 +1,7 @@
-use std::{fmt::Display};
+use std::fmt::Display;
 
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, Encodable, RlpStream, DecoderError, Rlp};
+use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Address(pub [u8; 20]);
@@ -10,10 +10,12 @@ impl Decodable for Address {
     fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {
         let data = rlp.data()?;
         if data.len() != 20 {
-            return Err(DecoderError::Custom("Invalid number of bytes for ETH address"));
+            return Err(DecoderError::Custom(
+                "Invalid number of bytes for ETH address",
+            ));
         }
 
-        let mut buf = [0u8;20];
+        let mut buf = [0u8; 20];
         buf.copy_from_slice(&data[..20]);
         Ok(Self(buf))
     }

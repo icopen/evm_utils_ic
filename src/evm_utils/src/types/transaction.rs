@@ -3,10 +3,10 @@ use std::{
     fmt::{self, Display},
 };
 
+use bytes::BufMut;
 use bytes::BytesMut;
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use rlp::{Decodable, Encodable, RlpStream};
-use bytes::BufMut;
 
 use super::{address::Address, num::U256};
 
@@ -52,10 +52,10 @@ impl Transaction {
                 buf.put_u8(2u8); //write EIP1559 identifier
                 buf.extend_from_slice(rlp::encode(a).as_ref());
                 buf.to_vec()
-            },
-            Transaction::EIP2930 => vec![]
+            }
+            Transaction::EIP2930 => vec![],
         };
-        
+
         Ok(data)
     }
 }
@@ -233,12 +233,11 @@ impl Encodable for Transaction1559 {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use std::error::Error;
 
-    use super::{Transaction};
+    use super::Transaction;
 
     #[test]
     fn decode_legacy_transaction() -> Result<(), Box<dyn Error>> {
@@ -248,7 +247,7 @@ mod test {
         let tx = Transaction::decode(&data)?;
         match tx {
             Transaction::Legacy(_) => Ok(()),
-            _ => panic!("Wrong transaction type")
+            _ => panic!("Wrong transaction type"),
         }
     }
 
@@ -277,10 +276,9 @@ mod test {
 
         match tx {
             Transaction::EIP1559(_) => Ok(()),
-            _ => panic!("Wrong transaction type")
+            _ => panic!("Wrong transaction type"),
         }
     }
-
 
     #[test]
     fn encode_1559_transaction() -> Result<(), Box<dyn Error>> {
@@ -290,7 +288,7 @@ mod test {
         let tx = Transaction::decode(&data)?;
 
         let encoded = Transaction::encode(&tx)?;
-        let encoded_hex = format!("0x{}",hex::encode(&encoded));
+        let encoded_hex = format!("0x{}", hex::encode(&encoded));
 
         assert_eq!(data, encoded);
         assert_eq!(data_hex, &encoded_hex);
@@ -298,8 +296,6 @@ mod test {
         Ok(())
     }
 }
-
-
 
 // pub struct Transaction2930 {
 //     pub chain_id: u64,
@@ -313,199 +309,4 @@ mod test {
 //     pub v: String,
 //     pub r: String,
 //     pub s: String,
-// }
-
-// impl From<(Vec<u8>, u64)> for TransactionLegacy {
-//     fn from(data: (Vec<u8>, u64)) -> Self {
-//         let rlp = rlp::Rlp::new(&data.0[..]);
-
-//         let nonce_hex = rlp.at(0).as_val::<Vec<u8>>();
-//         let nonce = vec_u8_to_u64(&nonce_hex);
-
-//         let gas_price_hex = rlp.at(1).as_val::<Vec<u8>>();
-//         let gas_price = vec_u8_to_u64(&gas_price_hex);
-
-//         let gas_limit_hex = rlp.at(2).as_val::<Vec<u8>>();
-//         let gas_limit = vec_u8_to_u64(&gas_limit_hex);
-
-//         let to_hex = rlp.at(3).as_val::<Vec<u8>>();
-//         let to = vec_u8_to_string(&to_hex);
-
-//         let value_hex = rlp.at(4).as_val::<Vec<u8>>();
-//         let value = vec_u8_to_u64(&value_hex);
-
-//         let data_tx_hex = rlp.at(5).as_val::<Vec<u8>>();
-//         let data_tx = vec_u8_to_string(&data_tx_hex);
-
-//         let v_hex = rlp.at(6).as_val::<Vec<u8>>();
-//         let v = vec_u8_to_string(&v_hex);
-
-//         let r_hex = rlp.at(7).as_val::<Vec<u8>>();
-//         let r = vec_u8_to_string(&r_hex);
-
-//         let s_hex = rlp.at(8).as_val::<Vec<u8>>();
-//         let s = vec_u8_to_string(&s_hex);
-
-//         let chain_id =data.1;
-
-//         TransactionLegacy {
-//             chain_id,
-//             nonce,
-//             gas_price,
-//             gas_limit,
-//             to,
-//             value,
-//             data: data_tx,
-//             v,
-//             r,
-//             s,
-//         }
-//     }
-// }
-
-// impl From<Vec<u8>> for Transaction2930 {
-//     fn from(data: Vec<u8>) -> Self {
-//         let rlp = rlp::Rlp::new(&data[1..]);
-
-//         let chain_id_hex = rlp.at(0).as_val::<Vec<u8>>();
-//         let chain_id = vec_u8_to_u64(&chain_id_hex);
-
-//         let nonce_hex = rlp.at(1).as_val::<Vec<u8>>();
-//         let nonce = vec_u8_to_u64(&nonce_hex);
-
-//         let gas_price_hex = rlp.at(2).as_val::<Vec<u8>>();
-//         let gas_price = vec_u8_to_u64(&gas_price_hex);
-
-//         let gas_limit_hex = rlp.at(3).as_val::<Vec<u8>>();
-//         let gas_limit = vec_u8_to_u64(&gas_limit_hex);
-
-//         let to_hex = rlp.at(4).as_val::<Vec<u8>>();
-//         let to = vec_u8_to_string(&to_hex);
-
-//         let value_hex = rlp.at(5).as_val::<Vec<u8>>();
-//         let value = vec_u8_to_u64(&value_hex);
-
-//         let data_tx_hex = rlp.at(6).as_val::<Vec<u8>>();
-//         let data_tx = vec_u8_to_string(&data_tx_hex);
-
-//         let access_list = decode_access_list(&rlp.at(7).as_raw().to_vec());
-
-//         let v_hex = rlp.at(8).as_val::<Vec<u8>>();
-//         let v = vec_u8_to_string(&v_hex);
-
-//         let r_hex = rlp.at(9).as_val::<Vec<u8>>();
-//         let r = vec_u8_to_string(&r_hex);
-
-//         let s_hex = rlp.at(10).as_val::<Vec<u8>>();
-//         let s = vec_u8_to_string(&s_hex);
-//         Transaction2930 {
-//             chain_id,
-//             nonce,
-//             gas_price,
-//             gas_limit,
-//             to,
-//             data: data_tx,
-//             value,
-//             access_list,
-//             v,
-//             r,
-//             s,
-//         }
-
-//     }
-// }
-
-// impl From<Vec<u8>> for Transaction1559 {
-//     fn from(data: Vec<u8>) -> Self {
-//         let rlp = rlp::Rlp::new(&data[1..]);
-
-//         // let chain_id_hex = rlp.at(0).as_val::<Vec<u8>>();
-//         // let chain_id = vec_u8_to_u64(&chain_id_hex);
-
-//         // let nonce_hex = rlp.at(1).as_val::<Vec<u8>>();
-//         // let nonce = vec_u8_to_u64(&nonce_hex);
-
-//         // let max_priority_fee_per_gas_hex = rlp.at(2).as_val::<Vec<u8>>();
-//         // let max_priority_fee_per_gas = vec_u8_to_u64(&max_priority_fee_per_gas_hex);
-
-//         // let max_fee_per_gas_hex = rlp.at(3).as_val::<Vec<u8>>();
-
-//         // let max_fee_per_gas = vec_u8_to_u64(&max_fee_per_gas_hex);
-
-//         // let gas_limit_hex = rlp.at(4).as_val::<Vec<u8>>();
-//         // let gas_limit = vec_u8_to_u64(&gas_limit_hex);
-
-//         // let to_hex = rlp.at(5).as_val::<Vec<u8>>();
-//         // let to = vec_u8_to_string(&to_hex);
-
-//         // let value_hex = rlp.at(6).as_val::<Vec<u8>>();
-//         // let value = vec_u8_to_u64(&value_hex);
-
-//         // let data_tx_hex = rlp.at(7).as_val::<Vec<u8>>();
-//         // let data_tx = vec_u8_to_string(&data_tx_hex);
-
-//         // let access_list = decode_access_list(&rlp.at(8).as_raw().to_vec());
-
-//         // let v_hex = rlp.at(9).as_val::<Vec<u8>>();
-//         // let v = vec_u8_to_string(&v_hex);
-
-//         // let r_hex = rlp.at(10).as_val::<Vec<u8>>();
-//         // let r = vec_u8_to_string(&r_hex);
-
-//         // let s_hex = rlp.at(11).as_val::<Vec<u8>>();
-//         // let s = vec_u8_to_string(&s_hex);
-
-//         // Transaction1559 {
-//         //     chain_id,
-//         //     nonce,
-//         //     max_priority_fee_per_gas,
-//         //     max_fee_per_gas,
-//         //     gas_limit,
-//         //     to,
-//         //     value,
-//         //     data: data_tx,
-//         //     access_list,
-//         //     v,
-//         //     r,
-//         //     s,
-//         // }
-//     }
-// }
-
-// fn encode_access_list(access_list: &Vec<(String, Vec<String>)>) -> Vec<u8> {
-//     let mut stream = rlp::RlpStream::new_list(access_list.len());
-
-//     for list in access_list {
-//         let mut stream_tuple = rlp::RlpStream::new_list(2);
-
-//         // append address
-//         stream_tuple.append(&string_to_vec_u8(&list.0[..]));
-
-//         // append storage keys
-//         let mut stream_storage_keys = rlp::RlpStream::new_list(list.1.len());
-//         for storage_key in list.1.clone() {
-//             stream_storage_keys.append(&string_to_vec_u8(&storage_key[..]));
-//         }
-//         stream_tuple.append_raw(&stream_storage_keys.out(), 1);
-
-//         // append (address, storage_keys)
-//         stream.append_raw(&stream_tuple.out(), 1);
-//     }
-
-//     stream.out().to_vec()
-// }
-
-// fn decode_access_list(access_list: &Vec<u8>) -> Vec<(String, Vec<String>)> {
-//     let mut decoded_access_list = vec![];
-//     let rlp = rlp::Rlp::new(access_list);
-//     for item in rlp.iter() {
-//         let address = item.at(0).as_val();
-//         let storage_keys_u8 = item.at(1).as_list::<Vec<u8>>();
-//         let storage_keys = storage_keys_u8
-//             .iter()
-//             .map(|x| vec_u8_to_string(x))
-//             .collect::<Vec<String>>();
-//         decoded_access_list.push((vec_u8_to_string(&address), storage_keys));
-//     }
-//     decoded_access_list
 // }
