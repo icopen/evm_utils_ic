@@ -31,6 +31,10 @@ impl U256 {
         true
     }
 
+    pub fn as_hex(&self) -> String {
+        hex::encode(&self.0)
+    }
+
     #[inline]
     pub fn as_u64(&self) -> u64 {
         let mut buf = [0u8; 8];
