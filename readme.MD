@@ -28,13 +28,13 @@ Link [https://icdevs.org/bounties/2023/01/09/28-EVM-Utility-Canister-Rust.html]
 For now I have decided to skip functions related to private keys processing. I do believe it is not secure to pass public keys.
 
 
-- [ ] `recover_signature(vec u8)` - recovers public key from ethereum style recoverable signature (65 bytes), equivalent to ecrecover
+- [x] `recover_public_key(vec u8, vec u8)` - recovers public key from ethereum style recoverable signature (65 bytes), equivalent to ecrecover
 
 - [ ] `is_valid_public` - checks if public key is valid
 
 - [ ] `is_valid_siganature` - validates ECDSA signature
 
-- [ ] `pub_to_address` - converts public key to ethereum address
+- [x] `pub_to_address` - converts public key to ethereum address
 
 # Getting started
 

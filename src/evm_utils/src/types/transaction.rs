@@ -10,7 +10,7 @@ use rlp::{Decodable, Encodable, RlpStream, Rlp};
 use secp256k1::{ecdsa::{RecoverableSignature, RecoveryId}, Message, PublicKey};
 use sha3::digest::typenum::U2;
 
-use crate::utils::{keccak256, recover_sender};
+use crate::utils::{keccak256, _recover_public_key};
 
 use super::{address::Address, num::U256};
 
@@ -127,7 +127,7 @@ impl Decodable for TransactionLegacy {
             rlp.append(&"");
     
 
-            let sender = recover_sender(&r, &s, v, &rlp.out()[..])
+            let sender = _recover_public_key(&r, &s, v, &rlp.out()[..])
             .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
 
             // from = Some(Address::from(sender));
@@ -234,7 +234,7 @@ impl Decodable for Transaction1559 {
             buf.extend_from_slice(&[2]);
             buf.extend_from_slice(&rlp.out()[..]);
 
-            let sender = recover_sender(&r, &s, v, &buf[..])
+            let sender = _recover_public_key(&r, &s, v, &buf[..])
             .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
 
             from = Some(Address::from(sender));
