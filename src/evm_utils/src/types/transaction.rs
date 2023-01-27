@@ -1,12 +1,16 @@
 use std::{
     error::Error,
-    fmt::{self, Display},
+    fmt::{self, Display}, vec,
 };
 
 use bytes::BufMut;
 use bytes::BytesMut;
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, Encodable, RlpStream};
+use rlp::{Decodable, Encodable, RlpStream, Rlp};
+use secp256k1::{ecdsa::{RecoverableSignature, RecoveryId}, Message, PublicKey};
+use sha3::digest::typenum::U2;
+
+use crate::utils::{keccak256, recover_sender};
 
 use super::{address::Address, num::U256};
 
@@ -69,7 +73,7 @@ pub struct TransactionLegacy {
     pub to: Address,
     pub value: u64,
     pub data: Vec<u8>,
-    pub v: Vec<u8>,
+    pub v: u64,
     pub r: Vec<u8>,
     pub s: Vec<u8>,
 }
@@ -93,33 +97,56 @@ impl Decodable for TransactionLegacy {
         let value: u64 = rlp.val_at(4)?;
         let data: Vec<u8> = rlp.val_at(5)?;
 
-        let mut item = Self {
-            chain_id: 0,
+        let mut chain_id = 0;
+
+        let mut v = 0u64;
+        let mut r: Vec<u8> = vec![];
+        let mut s: Vec<u8> = vec![];
+
+        // let mut from = None;
+
+        if item_count == 9 {
+            v= rlp.val_at(6)?;
+            r = rlp.val_at(7)?;
+            s = rlp.val_at(8)?;
+
+            if v >= 35 {
+                chain_id = (v-35)/2;
+            }
+
+            let mut rlp = RlpStream::new();
+            rlp.begin_list(9);
+            rlp.append(&nonce);
+            rlp.append(&gas_price);
+            rlp.append(&gas_limit);
+            rlp.append(&to);
+            rlp.append(&value);
+            rlp.append(&data);
+            rlp.append(&chain_id);
+            rlp.append(&"");
+            rlp.append(&"");
+    
+
+            let sender = recover_sender(&r, &s, v, &rlp.out()[..])
+            .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
+
+            // from = Some(Address::from(sender));
+        }
+
+        // let hash = keccak256(&[rlp.as_raw()]);
+
+        let item = Self {
+            chain_id,
             nonce,
             gas_price,
             gas_limit,
             to: to,
             value: value,
             data: data,
-            v: vec![],
-            r: vec![],
-            s: vec![],
+            v,
+            r,
+            s,
         };
-
-        if item_count == 9 {
-            let v: Vec<u8> = rlp.val_at(6)?;
-            let r: Vec<u8> = rlp.val_at(7)?;
-            let s: Vec<u8> = rlp.val_at(8)?;
-
-            item.v = v;
-            item.r = r;
-            item.s = s;
-
-            // if r == 0 && s == 0 {
-            //     item.chain_id = v;
-            //     item.v = 0;
-            // }
-        }
 
         Ok(item)
     }
@@ -148,13 +175,14 @@ pub struct Transaction1559 {
     pub max_priority_fee_per_gas: u64,
     pub gas_limit: u64,
     pub max_fee_per_gas: u64,
-    pub to: Vec<u8>,
+    pub to: Address,
     pub value: u64,
     pub data: Vec<u8>,
     pub access_list: Vec<u8>,
-    pub v: Vec<u8>,
+    pub v: u64,
     pub r: Vec<u8>,
     pub s: Vec<u8>,
+    pub from: Option<Address>
 }
 
 impl Decodable for Transaction1559 {
@@ -173,13 +201,47 @@ impl Decodable for Transaction1559 {
         let max_fee_per_gas: u64 = rlp.val_at(3)?;
         let gas_limit: u64 = rlp.val_at(4)?;
 
-        let to = rlp.val_at::<Vec<u8>>(5)?;
+        let to = rlp.val_at(5)?;
 
         let value: u64 = rlp.val_at(6)?;
         let data: Vec<u8> = rlp.val_at(7)?;
         let access_list: Vec<u8> = rlp.at(8)?.as_raw().to_vec();
 
-        let mut item = Self {
+        let mut from = None;
+
+        let mut v = 0;
+        let mut r = vec![];
+        let mut s = vec![];
+
+        if item_count == 12 {
+            v = rlp.val_at(9)?;
+            r = rlp.val_at(10)?;
+            s = rlp.val_at(11)?;
+
+            let mut rlp = RlpStream::new();
+            rlp.begin_list(9);
+            rlp.append(&chain_id);
+            rlp.append(&nonce);
+            rlp.append(&max_priority_fee_per_gas);
+            rlp.append(&max_fee_per_gas);
+            rlp.append(&gas_limit);
+            rlp.append(&to);
+            rlp.append(&value);
+            rlp.append(&data);
+            rlp.append_raw(&access_list, access_list.len());
+    
+            let mut buf = BytesMut::new();
+            buf.extend_from_slice(&[2]);
+            buf.extend_from_slice(&rlp.out()[..]);
+
+            let sender = recover_sender(&r, &s, v, &buf[..])
+            .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
+
+            from = Some(Address::from(sender));
+
+        }
+
+        let item = Self {
             chain_id,
             nonce,
             max_priority_fee_per_gas,
@@ -189,25 +251,11 @@ impl Decodable for Transaction1559 {
             value: value,
             data: data,
             access_list: access_list,
-            v: vec![],
-            r: vec![],
-            s: vec![],
+            v,
+            r,
+            s,
+            from
         };
-
-        if item_count == 12 {
-            let v: Vec<u8> = rlp.val_at(9)?;
-            let r: Vec<u8> = rlp.val_at(10)?;
-            let s: Vec<u8> = rlp.val_at(11)?;
-
-            item.v = v;
-            item.r = r;
-            item.s = s;
-
-            // if r == 0 && s == 0 {
-            //     item.chain_id = v;
-            //     item.v = 0;
-            // }
-        }
 
         Ok(item)
     }
@@ -246,7 +294,10 @@ mod test {
 
         let tx = Transaction::decode(&data)?;
         match tx {
-            Transaction::Legacy(_) => Ok(()),
+            Transaction::Legacy(x) => {
+                assert_eq!(x.chain_id, 1);
+
+                Ok(()) },
             _ => panic!("Wrong transaction type"),
         }
     }
@@ -275,7 +326,14 @@ mod test {
         let tx = Transaction::decode(&data)?;
 
         match tx {
-            Transaction::EIP1559(_) => Ok(()),
+            Transaction::EIP1559(x) => {
+                match x.from {
+                    Some(from) => println!("{}", from),
+                    None => {}
+                }
+
+                Ok(())
+            },
             _ => panic!("Wrong transaction type"),
         }
     }
