@@ -11,7 +11,7 @@ fn rlp_encode(data: List) -> Result<Vec<u8>, String> {
 
 #[query]
 fn rlp_decode(raw: Vec<u8>) -> Result<List, String> {
-    let item: List = rlp::decode(&raw).map_err(|x| format!("{}", x))?;
+    let item: List = rlp::decode(&raw).map_err(|x| format!("{x}"))?;
 
     Ok(item)
 }

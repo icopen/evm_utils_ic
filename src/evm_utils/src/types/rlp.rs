@@ -32,8 +32,8 @@ impl Decodable for Item {
 }
 
 impl Encodable for Item {
-    fn rlp_append(&self, rlp: &mut RlpStream) {
-        // rlp.append_list(&self.values);
+    fn rlp_append(&self, _rlp: &mut RlpStream) {
+        todo!()
     }
 }
 
@@ -44,9 +44,6 @@ pub struct List {
 
 impl Decodable for List {
     fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {
-        // let name: String = rlp.val_at(0)?;
-        // let ver: usize = rlp.val_at(1)?;
-
         if !rlp.is_list() {
             return Err(rlp::DecoderError::RlpExpectedToBeList);
         }

@@ -2,3 +2,8 @@
 members = [
     "src/evm_utils",
 ]
+
+[profile.release]
+opt-level="s"
+lto = true
+codegen-units = 1

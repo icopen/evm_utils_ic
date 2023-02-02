@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
+use rlp::{Decodable, DecoderError, Encodable, RlpStream};
 use secp256k1::PublicKey;
 
 use crate::utils::keccak256;
@@ -51,8 +51,8 @@ impl From<PublicKey> for Address {
 //todo: add tests for conversion from public key to address!
 #[cfg(test)]
 mod test {
-    use std::str::FromStr;
     use std::error::Error;
+    use std::str::FromStr;
 
     use secp256k1::PublicKey;
 

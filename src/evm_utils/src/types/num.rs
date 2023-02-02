@@ -20,43 +20,6 @@ impl U256 {
 
         count
     }
-
-    pub fn is_zero(&self) -> bool {
-        for val in self.0 {
-            if val != 0 {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    pub fn as_hex(&self) -> String {
-        hex::encode(&self.0)
-    }
-
-    #[inline]
-    pub fn as_u64(&self) -> u64 {
-        let mut buf = [0u8; 8];
-        buf.copy_from_slice(&self.0[24..32]);
-        u64::from_be_bytes(buf)
-    }
-
-    // pub fn as_u64(&self) -> u64 {
-
-    // }
-
-    // Whether this fits u64.
-    #[inline]
-    fn fits_word(&self) -> bool {
-        let U256(ref arr) = self;
-        for i in 1..24 {
-            if arr[i] != 0 {
-                return false;
-            }
-        }
-        return true;
-    }
 }
 
 impl From<[u8; 32]> for U256 {
@@ -84,7 +47,7 @@ impl From<u64> for U256 {
 
 impl Encodable for U256 {
     fn rlp_append(&self, s: &mut RlpStream) {
-        let leading_empty_bytes = self.leading_zeros() as usize / 8;
+        let leading_empty_bytes = self.leading_zeros() / 8;
         let buffer = self.0;
 
         s.encoder().encode_value(&buffer[leading_empty_bytes..]);
@@ -121,25 +84,5 @@ mod test {
 
         let converted = U256::from(num);
         assert_eq!(converted.0[30], 4);
-    }
-
-    #[test]
-    fn to_u64() {
-        let mut buf = [0u8; 32];
-        buf[30] = 4;
-
-        let converted = U256(buf);
-        let num = converted.as_u64();
-
-        assert_eq!(1024, num);
-    }
-
-    #[test]
-    fn is_zero() {
-        let item = U256::zero();
-        assert!(item.is_zero());
-
-        let item2 = U256([1u8; 32]);
-        assert!(!item2.is_zero());
     }
 }
