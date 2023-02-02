@@ -48,7 +48,6 @@ impl From<PublicKey> for Address {
     }
 }
 
-//todo: add tests for conversion from public key to address!
 #[cfg(test)]
 mod test {
     use std::error::Error;

@@ -9,19 +9,6 @@ impl U256 {
     pub fn zero() -> Self {
         Self([0u8; 32])
     }
-    pub fn leading_zeros(&self) -> usize {
-        let mut count = 0;
-
-        for val in self.0 {
-            if val == 0 {
-                count += 1;
-            } else {
-                break;
-            }
-        }
-
-        count
-    }
 }
 
 impl From<[u8; 32]> for U256 {
@@ -56,10 +43,7 @@ impl Display for U256 {
 
 impl Encodable for U256 {
     fn rlp_append(&self, s: &mut RlpStream) {
-        let leading_empty_bytes = self.leading_zeros() / 8;
-        let buffer = self.0;
-
-        s.encoder().encode_value(&buffer[leading_empty_bytes..]);
+        s.encoder().encode_value(&self.0);
     }
 }
 
@@ -68,9 +52,6 @@ impl Decodable for U256 {
         rlp.decoder().decode_value(|bytes| match bytes.len() {
             0 => Ok(U256::zero()),
             l if l <= 32 => {
-                if bytes[0] == 0 {
-                    return Err(DecoderError::RlpInvalidIndirection);
-                }
                 let mut res = U256::zero();
 
                 for (i, byte) in bytes.iter().enumerate().take(l) {
@@ -93,5 +74,15 @@ mod test {
 
         let converted = U256::from(num);
         assert_eq!(converted.0[30], 4);
+    }
+
+    #[test]
+    fn rlp_encode_zero() {
+        let num = U256::from(10u64);
+        let encoded = rlp::encode(&num);
+
+        let hex_data = hex::encode(&encoded);
+
+        println!("{hex_data}");
     }
 }

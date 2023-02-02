@@ -1,8 +1,8 @@
-type TransactionType =
+type Transaction =
 variant {
-    Legacy: null;
-    EIP1559: null;
-    EIP2930: null;
+    Legacy: TransactionLegacy;
+    EIP1559: Transaction1559;
+    EIP2930: Transaction2930;
 };
 
 type Entry = 
