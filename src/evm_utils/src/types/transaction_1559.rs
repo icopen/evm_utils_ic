@@ -1,7 +1,11 @@
+use bytes::{BufMut, BytesMut};
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, Encodable, RlpStream};
+use rlp::{Decodable, RlpStream};
 
-use super::address::Address;
+use super::{
+    address::Address,
+    signature::{Signable, Signature},
+};
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Transaction1559 {
@@ -14,6 +18,7 @@ pub struct Transaction1559 {
     pub value: u64,
     pub data: Vec<u8>,
     pub access_list: Vec<u8>,
+    pub sign: Option<Signature>,
 }
 
 impl Decodable for Transaction1559 {
@@ -38,40 +43,7 @@ impl Decodable for Transaction1559 {
         let data: Vec<u8> = rlp.val_at(7)?;
         let access_list: Vec<u8> = rlp.at(8)?.as_raw().to_vec();
 
-        // let mut from = None;
-
-        // let mut v = 0;
-        // let mut r = vec![];
-        // let mut s = vec![];
-
-        // if item_count == 12 {
-        //     v = rlp.val_at(9)?;
-        //     r = rlp.val_at(10)?;
-        //     s = rlp.val_at(11)?;
-
-        //     let mut rlp = RlpStream::new();
-        //     rlp.begin_list(9);
-        //     rlp.append(&chain_id);
-        //     rlp.append(&nonce);
-        //     rlp.append(&max_priority_fee_per_gas);
-        //     rlp.append(&max_fee_per_gas);
-        //     rlp.append(&gas_limit);
-        //     rlp.append(&to);
-        //     rlp.append(&value);
-        //     rlp.append(&data);
-        //     rlp.append_raw(&access_list, access_list.len());
-
-        //     let mut buf = BytesMut::new();
-        //     buf.extend_from_slice(&[2]);
-        //     buf.extend_from_slice(&rlp.out()[..]);
-
-        //     let sender = _recover_public_key(&r, &s, v, &buf[..])
-        //         .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
-
-        //     from = Some(Address::from(sender));
-        // }
-
-        let item = Self {
+        let mut item = Self {
             chain_id,
             nonce,
             max_priority_fee_per_gas,
@@ -81,15 +53,39 @@ impl Decodable for Transaction1559 {
             value,
             data,
             access_list,
+            sign: None,
         };
+
+        if item_count == 12 {
+            let mut buf = BytesMut::new();
+            buf.extend_from_slice(&[2]);
+            buf.extend_from_slice(rlp.as_raw());
+
+            let signature = Signature::create(&item, rlp, &buf, 9)
+                .map_err(|_| rlp::DecoderError::Custom("Error while recovering signature"))?;
+
+            item.sign = Some(signature);
+        }
 
         Ok(item)
     }
 }
 
-impl Encodable for Transaction1559 {
-    fn rlp_append(&self, rlp: &mut RlpStream) {
-        rlp.begin_list(9);
+impl Signable for Transaction1559 {
+    fn get_bytes(&self, for_signing: bool) -> bytes::BytesMut {
+        let mut rlp = RlpStream::new();
+        self.encode_rlp(&mut rlp, for_signing);
+
+        let mut buf: BytesMut = BytesMut::new();
+        buf.put_u8(2u8); //write EIP2930 identifier
+        buf.extend_from_slice(rlp.out().as_ref());
+
+        buf
+    }
+
+    fn encode_rlp(&self, rlp: &mut RlpStream, for_signing: bool) {
+        rlp.begin_unbounded_list();
+
         rlp.append(&self.chain_id);
         rlp.append(&self.nonce);
         rlp.append(&self.max_priority_fee_per_gas);
@@ -98,7 +94,63 @@ impl Encodable for Transaction1559 {
         rlp.append(&self.to);
         rlp.append(&self.value);
         rlp.append(&self.data);
-
         rlp.append_raw(&self.access_list, self.access_list.len());
+
+        if !for_signing && self.sign.is_some() {
+            if let Some(sign) = self.sign.as_ref() {
+                rlp.append(&sign.v);
+                rlp.append(&sign.r);
+                rlp.append(&sign.s);
+            }
+        }
+
+        rlp.finalize_unbounded_list();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::types::transaction::Transaction;
+    use std::error::Error;
+
+    #[test]
+    fn decode_1559_transaction() -> Result<(), Box<dyn Error>> {
+        let data =  "0x02f8b10108840f7f4900850519f0118083055845943fe65692bfcd0e6cf84cb1e7d24108e434a7587e80b8447050ccd90000000000000000000000005b1578681d43931030fffe066a072133842dde430000000000000000000000000000000000000000000000000000000000000001c001a0cac74d8e73874331e4ba78809a7b30574c76d35c43ea00983c76752b65a0632aa04b6caeac4c693f082b8bd4d2ad349848bc71b9d32a419e33a5a303a3b3f4e8c8";
+        let data = hex::decode(data.trim_start_matches("0x"))?;
+
+        let tx = Transaction::decode(&data)?;
+
+        match tx {
+            Transaction::EIP1559(x) => match x.sign {
+                Some(sig) => {
+                    assert_eq!(
+                        "0x5b1578681d43931030fffe066a072133842dde43",
+                        format!("{}", sig.from.unwrap())
+                    );
+                    assert_eq!(
+                        "0x89f35f37f590d0f22b5ab8287bcd2d8a47683ef282b6ad4b2552ab01931faf36",
+                        format!("{}", sig.hash)
+                    );
+                    Ok(())
+                }
+                None => panic!("Missing signature"),
+            },
+            _ => panic!("Wrong transaction type"),
+        }
+    }
+
+    #[test]
+    fn encode_1559_transaction() -> Result<(), Box<dyn Error>> {
+        let data_hex =  "0x02f8b10108840f7f4900850519f0118083055845943fe65692bfcd0e6cf84cb1e7d24108e434a7587e80b8447050ccd90000000000000000000000005b1578681d43931030fffe066a072133842dde430000000000000000000000000000000000000000000000000000000000000001c001a0cac74d8e73874331e4ba78809a7b30574c76d35c43ea00983c76752b65a0632aa04b6caeac4c693f082b8bd4d2ad349848bc71b9d32a419e33a5a303a3b3f4e8c8";
+        let data = hex::decode(data_hex.trim_start_matches("0x"))?;
+
+        let tx = Transaction::decode(&data)?;
+        let encoded = tx.encode(false).to_vec();
+        let encoded_hex = format!("0x{}", hex::encode(&encoded));
+
+        assert_eq!(data, encoded);
+        assert_eq!(data_hex, &encoded_hex);
+
+        Ok(())
     }
 }

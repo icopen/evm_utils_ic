@@ -1,7 +1,11 @@
+use bytes::{BufMut, BytesMut};
 use ic_cdk::export::candid::{CandidType, Deserialize};
-use rlp::{Decodable, Encodable, RlpStream};
+use rlp::{Decodable, RlpStream};
 
-use super::address::Address;
+use super::{
+    address::Address,
+    signature::{Signable, Signature},
+};
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Transaction2930 {
@@ -13,6 +17,7 @@ pub struct Transaction2930 {
     pub value: u64,
     pub data: Vec<u8>,
     pub access_list: Vec<u8>,
+    pub sign: Option<Signature>,
 }
 
 impl Decodable for Transaction2930 {
@@ -36,34 +41,7 @@ impl Decodable for Transaction2930 {
         let data: Vec<u8> = rlp.val_at(6)?;
         let access_list: Vec<u8> = rlp.at(7)?.as_raw().to_vec();
 
-        if item_count == 11 {
-            // v = rlp.val_at(9)?;
-            // r = rlp.val_at(10)?;
-            // s = rlp.val_at(11)?;
-
-            // let mut rlp = RlpStream::new();
-            // rlp.begin_list(9);
-            // rlp.append(&chain_id);
-            // rlp.append(&nonce);
-            // rlp.append(&max_priority_fee_per_gas);
-            // rlp.append(&max_fee_per_gas);
-            // rlp.append(&gas_limit);
-            // rlp.append(&to);
-            // rlp.append(&value);
-            // rlp.append(&data);
-            // rlp.append_raw(&access_list, access_list.len());
-
-            // let mut buf = BytesMut::new();
-            // buf.extend_from_slice(&[2]);
-            // buf.extend_from_slice(&rlp.out()[..]);
-
-            // let sender = _recover_public_key(&r, &s, v, &buf[..])
-            //     .map_err(|_| rlp::DecoderError::Custom("Error decoding sender address"))?;
-
-            // from = Some(Address::from(sender));
-        }
-
-        let item = Self {
+        let mut item = Self {
             chain_id,
             nonce,
             gas_price,
@@ -72,15 +50,39 @@ impl Decodable for Transaction2930 {
             value,
             data,
             access_list,
+            sign: None,
         };
+
+        if item_count == 11 {
+            let mut buf = BytesMut::new();
+            buf.extend_from_slice(&[1]);
+            buf.extend_from_slice(rlp.as_raw());
+
+            let signature = Signature::create(&item, rlp, &buf, 8)
+                .map_err(|_| rlp::DecoderError::Custom("Error while recovering signature"))?;
+
+            item.sign = Some(signature);
+        }
 
         Ok(item)
     }
 }
 
-impl Encodable for Transaction2930 {
-    fn rlp_append(&self, rlp: &mut RlpStream) {
-        rlp.begin_list(12);
+impl Signable for Transaction2930 {
+    fn get_bytes(&self, for_signing: bool) -> bytes::BytesMut {
+        let mut rlp = RlpStream::new();
+        self.encode_rlp(&mut rlp, for_signing);
+
+        let mut buf: BytesMut = BytesMut::new();
+        buf.put_u8(1u8); //write EIP2930 identifier
+        buf.extend_from_slice(rlp.out().as_ref());
+
+        buf
+    }
+
+    fn encode_rlp(&self, rlp: &mut RlpStream, for_signing: bool) {
+        rlp.begin_unbounded_list();
+
         rlp.append(&self.chain_id);
         rlp.append(&self.nonce);
         rlp.append(&self.gas_price);
@@ -88,8 +90,17 @@ impl Encodable for Transaction2930 {
         rlp.append(&self.to);
         rlp.append(&self.value);
         rlp.append(&self.data);
-
         rlp.append_raw(&self.access_list, self.access_list.len());
+
+        if !for_signing && self.sign.is_some() {
+            if let Some(sign) = self.sign.as_ref() {
+                rlp.append(&sign.v);
+                rlp.append(&sign.r);
+                rlp.append(&sign.s);
+            }
+        }
+
+        rlp.finalize_unbounded_list();
     }
 }
 
@@ -99,26 +110,39 @@ mod test {
     use std::error::Error;
 
     #[test]
-    fn decode_1559_transaction() -> Result<(), Box<dyn Error>> {
-        let data =  "0x02f871015585037d46c34985037d46c34983027d0594e68df8dc3931aaab2077c57bbd2cbcedd17fcfce808457386225c080a0ac97a4d2f460d238fddaaed992047547d04c17ae454d6219a3a96699115ffcf5a006c2d3bd79f9b3321438721609ff6dddb0e50b8d9e38d02b68456590c33dee47";
+    fn decode_2930_transaction() -> Result<(), Box<dyn Error>> {
+        let data =  "0x01f8ab010485032af8977482d91194bbbbca6a901c926f240b89eacb641d8aec7aeafd80b844095ea7b3000000000000000000000000000000000022d473030f116ddee9f6b43ac78ba3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc001a039c31c2e8693b56c4dc7b07fc77e1bfa6dd74f0cf55450f15a3c3e8ce0e2540ca071b92c8319f7415ba131e07f5481a20388bfd234640b58ae46c94ab2a5c2b7ea";
         let data = hex::decode(data.trim_start_matches("0x"))?;
 
         let tx = Transaction::decode(&data)?;
 
         match tx {
-            Transaction::EIP1559(_) => Ok(()),
+            Transaction::EIP2930(x) => match x.sign {
+                Some(sig) => {
+                    assert_eq!(
+                        "0xef9ae1e5329f145dfbc5a4c435601a1a22a41fd0",
+                        format!("{}", sig.from.unwrap())
+                    );
+                    assert_eq!(
+                        "0x50f38b90c94d32726648b36cacfafbf71a07e898fe1d1dbc692aa751cbf296cd",
+                        format!("{}", sig.hash)
+                    );
+                    Ok(())
+                }
+                None => panic!("Missing signature"),
+            },
             _ => panic!("Wrong transaction type"),
         }
     }
 
     #[test]
-    fn encode_1559_transaction() -> Result<(), Box<dyn Error>> {
-        let data_hex =  "0x02f871015585037d46c34985037d46c34983027d0594e68df8dc3931aaab2077c57bbd2cbcedd17fcfce808457386225c080a0ac97a4d2f460d238fddaaed992047547d04c17ae454d6219a3a96699115ffcf5a006c2d3bd79f9b3321438721609ff6dddb0e50b8d9e38d02b68456590c33dee47";
+    fn encode_2930_transaction() -> Result<(), Box<dyn Error>> {
+        let data_hex =  "0x01f8ab010485032af8977482d91194bbbbca6a901c926f240b89eacb641d8aec7aeafd80b844095ea7b3000000000000000000000000000000000022d473030f116ddee9f6b43ac78ba3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc001a039c31c2e8693b56c4dc7b07fc77e1bfa6dd74f0cf55450f15a3c3e8ce0e2540ca071b92c8319f7415ba131e07f5481a20388bfd234640b58ae46c94ab2a5c2b7ea";
         let data = hex::decode(data_hex.trim_start_matches("0x"))?;
 
         let tx = Transaction::decode(&data)?;
 
-        let encoded = Transaction::encode(&tx)?;
+        let encoded = tx.encode(false);
         let encoded_hex = format!("0x{}", hex::encode(&encoded));
 
         assert_eq!(data, encoded);

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
@@ -42,6 +44,13 @@ impl From<u64> for U256 {
         let mut buf = [0u8; 32];
         buf[24..32].copy_from_slice(&num.to_be_bytes());
         U256(buf)
+    }
+}
+
+impl Display for U256 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "0x")?;
+        write!(f, "{}", hex::encode(self.0))
     }
 }
 
