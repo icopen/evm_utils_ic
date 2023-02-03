@@ -1,8 +1,10 @@
 use crate::types::rlp::List;
 
+use candid::candid_method;
 use ic_cdk_macros::query;
 
 #[query]
+#[candid_method(query)]
 fn rlp_encode(data: List) -> Result<Vec<u8>, String> {
     let raw = rlp::encode(&data);
 
@@ -10,6 +12,7 @@ fn rlp_encode(data: List) -> Result<Vec<u8>, String> {
 }
 
 #[query]
+#[candid_method(query)]
 fn rlp_decode(raw: Vec<u8>) -> Result<List, String> {
     let item: List = rlp::decode(&raw).map_err(|x| format!("{x}"))?;
 

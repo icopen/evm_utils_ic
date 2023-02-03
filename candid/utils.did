@@ -1,0 +1,64 @@
+type AccessList = record { storage_keys : vec vec nat8; address : vec nat8 };
+type Item = variant {
+  Num : nat64;
+  Raw : vec nat8;
+  Empty;
+  List : List;
+  Text : text;
+};
+type List = record { values : vec Item };
+type Result = variant { Ok : vec nat8; Err : text };
+type Result_1 = variant { Ok : Transaction; Err : text };
+type Result_2 = variant { Ok : List; Err : text };
+type Signature = record {
+  r : vec nat8;
+  s : vec nat8;
+  v : nat64;
+  from : opt vec nat8;
+  hash : vec nat8;
+};
+type Transaction = variant {
+  EIP1559 : Transaction1559;
+  EIP2930 : Transaction2930;
+  Legacy : TransactionLegacy;
+};
+type Transaction1559 = record {
+  to : vec nat8;
+  value : nat64;
+  max_priority_fee_per_gas : nat64;
+  data : vec nat8;
+  sign : opt Signature;
+  max_fee_per_gas : nat64;
+  chain_id : nat64;
+  nonce : nat64;
+  gas_limit : nat64;
+  access_list : vec AccessList;
+};
+type Transaction2930 = record {
+  to : vec nat8;
+  value : nat64;
+  data : vec nat8;
+  sign : opt Signature;
+  chain_id : nat64;
+  nonce : nat64;
+  gas_limit : nat64;
+  access_list : vec AccessList;
+  gas_price : nat64;
+};
+type TransactionLegacy = record {
+  to : vec nat8;
+  value : nat64;
+  data : vec nat8;
+  sign : opt Signature;
+  chain_id : nat64;
+  nonce : nat64;
+  gas_limit : nat64;
+  gas_price : nat64;
+};
+service : {
+  create_transaction : (Transaction) -> (Result) query;
+  keccak256 : (vec nat8) -> (vec nat8) query;
+  parse_transaction : (vec nat8) -> (Result_1) query;
+  rlp_decode : (vec nat8) -> (Result_2) query;
+  rlp_encode : (List) -> (Result) query;
+}

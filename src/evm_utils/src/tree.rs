@@ -1,7 +1,9 @@
+use candid::candid_method;
 use hasher::HasherKeccak;
 use ic_cdk::query;
 
 #[query]
+#[candid_method(query)]
 fn verify_proof(
     root: Vec<u8>,
     key: Vec<u8>,

@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use candid::candid_method;
 use ic_cdk::query;
 use secp256k1::ecdsa::RecoverableSignature;
 use secp256k1::ecdsa::RecoveryId;
@@ -44,16 +45,12 @@ pub fn _recover_public_key(
     let hash = keccak256(&[msg]);
     let msg = Message::from_slice(&hash.0)?;
 
-    // println!("r {}", hex::encode(r));
-    // println!("s {}", hex::encode(s));
-    // println!("v {}", v);
-    // println!("msg {}", msg);
-
     let pub_k = rec_sig.recover(&msg)?;
     Ok(pub_k)
 }
 
 #[query]
+#[candid_method(query)]
 fn recover_public_key(signature: Vec<u8>, msg: Vec<u8>) -> Result<Vec<u8>, String> {
     if signature.len() != 65 {
         Err(String::from("Invalid signature length!, should be 65"))
@@ -71,6 +68,7 @@ fn recover_public_key(signature: Vec<u8>, msg: Vec<u8>) -> Result<Vec<u8>, Strin
 }
 
 #[query]
+#[candid_method(query)]
 fn pub_to_address(public_key: Vec<u8>) -> Result<Vec<u8>, String> {
     let pub_k = PublicKey::from_slice(&public_key[..])
         .map_err(|x| format!("Error while reading public key {x}"))?;
@@ -81,6 +79,7 @@ fn pub_to_address(public_key: Vec<u8>) -> Result<Vec<u8>, String> {
 }
 
 #[query]
+#[candid_method(query)]
 fn is_valid_public(public_key: Vec<u8>) -> Result<(), String> {
     PublicKey::from_slice(&public_key[..])
         .map_err(|x| format!("Error while reading public key {x}"))?;
@@ -89,6 +88,7 @@ fn is_valid_public(public_key: Vec<u8>) -> Result<(), String> {
 }
 
 #[query]
+#[candid_method(query)]
 fn is_valid_signature(signature: Vec<u8>) -> Result<(), String> {
     if signature.len() != 65 {
         Err(String::from("Invalid signature length!, should be 65"))
