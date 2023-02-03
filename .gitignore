@@ -11,3 +11,7 @@ src/declarations/
 
 # rust
 target/
+
+# node
+node_modules
+coverage

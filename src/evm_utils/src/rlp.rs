@@ -23,14 +23,21 @@ fn rlp_decode(raw: Vec<u8>) -> Result<List, String> {
 mod test {
     use crate::{
         rlp::{rlp_decode, rlp_encode},
-        types::rlp::List,
+        types::rlp::{List, Item},
     };
 
     #[test]
     fn encode_decode_test() -> Result<(), String> {
-        let item = List { values: vec![] };
+        let item = List { values: vec![ 
+            Item::Text(String::from("test")),
+            Item::Num(64),
+            Item::Empty
+            ] };
 
         let encoded = rlp_encode(item.clone())?;
+
+        let hex_encoded = hex::encode(&encoded);
+        println!("{hex_encoded}");
 
         let decoded = rlp_decode(encoded)?;
 

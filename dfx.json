@@ -4,7 +4,7 @@
     "evm_utils": {
       "type": "rust",
       "package": "evm_utils",
-      "candid": "src/evm_utils/evm_utils.did"
+      "candid": "candid/utils.did"
     }
   },
   "defaults": {

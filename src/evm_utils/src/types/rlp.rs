@@ -32,8 +32,14 @@ impl Decodable for Item {
 }
 
 impl Encodable for Item {
-    fn rlp_append(&self, _rlp: &mut RlpStream) {
-        todo!()
+    fn rlp_append(&self, rlp: &mut RlpStream) {
+        match self {
+            Item::Text(txt) => {rlp.append(txt);}
+            Item::Num(txt) => {rlp.append(txt);}
+            Item::List(txt) => {rlp.append(txt);}
+            Item::Raw(txt) => {rlp.append(txt);}
+            Item::Empty => {rlp.append_empty_data();}
+        }
     }
 }
 
@@ -61,6 +67,14 @@ impl Decodable for List {
 
 impl Encodable for List {
     fn rlp_append(&self, rlp: &mut RlpStream) {
-        rlp.append_list(&self.values);
+        // rlp.append_list(&self.values);
+        rlp.begin_unbounded_list();
+
+        for item in &self.values {
+            rlp.append(item);
+        }
+        
+        rlp.finalize_unbounded_list();
     }
 }
+
