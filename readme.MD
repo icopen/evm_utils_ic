@@ -35,10 +35,14 @@ For now I have decided to skip functions related to private keys processing. I d
 
 # Getting started
 This package was published as a cargo crate, to use it type
-`cargo add ic_evm_utils`
+```
+cargo add ic_evm_utils
+````
 
 If you want to compile the package, clone the repo and run
-`cargo build --target wasm32-unknown-unknown`
+```
+cargo build --target wasm32-unknown-unknown
+```
 
 There is also prepared build script `build.sh` that builds and optimizes the wasm package using `ic-cdk-optimizer` (you need to install this first)
 
@@ -47,17 +51,25 @@ There are two types of tests prepared. First they are written in Rust to check i
 
 ## Rust tests
 To run tests written in Rust
-`cargo test`
+```
+cargo test
+```
 
 ## Js tests
 First you need to run local replica
-`dfx start --clean --background`
+```
+dfx start --clean --background
+```
 
 Then you need to deploy canisters
-`dfx deploy`
+```
+dfx deploy
+```
 
 Once deployment is complete you can run tests in js
-`yarn test`
+```
+yarn test
+```
 
 # Funding
 This library was initially incentivized by [ICDevs](https://icdevs.org/). You can view more about the bounty on the [website](https://icdevs.org/bounties/2023/01/09/28-EVM-Utility-Canister-Rust.html).

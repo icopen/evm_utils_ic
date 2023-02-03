@@ -51,17 +51,20 @@ impl Decodable for TransactionLegacy {
 
         if item_count == 9 {
             let v: u64 = rlp.val_at(6)?;
+            let r: Vec<u8> = rlp.val_at(7)?;
 
-            let mut chain_id = 0;
             if v >= 35 {
-                chain_id = (v - 35) / 2;
+                item.chain_id = (v - 35) / 2;
+            } else {
+                item.chain_id = v;
             }
-            item.chain_id = chain_id;
 
-            let signature = Signature::create(&item, rlp, rlp.as_raw(), 6)
-                .map_err(|_| rlp::DecoderError::Custom("Error while recovering signature"))?;
+            if r.len() > 0 {
+                let signature = Signature::create(&item, rlp, rlp.as_raw(), 6)
+                    .map_err(|_| rlp::DecoderError::Custom("Error while recovering signature"))?;
 
-            item.sign = Some(signature);
+                item.sign = Some(signature);
+            }
         }
 
         Ok(item)
@@ -110,6 +113,21 @@ mod test {
     use std::error::Error;
 
     use crate::types::transaction::Transaction;
+
+    #[test]
+    fn decode_legacy_no_signature_transaction() -> Result<(), Box<dyn Error>> {
+        let data =  "e10182271082271094e94f1fa4f27d9d288ffea234bb62e1fbc086ca0c8080018080";
+        let data = hex::decode(data)?;
+
+        let tx = Transaction::decode(&data)?;
+        match tx {
+            Transaction::Legacy(x) => {
+                assert_eq!(x.chain_id, 1);
+                Ok(())
+            }
+            _ => panic!("Wrong transaction type"),
+        }
+    }
 
     #[test]
     fn decode_legacy_transaction() -> Result<(), Box<dyn Error>> {
