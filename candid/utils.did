@@ -7,11 +7,12 @@ type Item = variant {
   Text : text;
 };
 type List = record { values : vec Item };
-type Result = variant { Ok : vec nat8; Err : text };
+type Result = variant { Ok : record { vec nat8; vec nat8 }; Err : text };
 type Result_1 = variant { Ok; Err : text };
 type Result_2 = variant { Ok : Transaction; Err : text };
-type Result_3 = variant { Ok : List; Err : text };
-type Result_4 = variant { Ok : opt vec nat8; Err : text };
+type Result_3 = variant { Ok : vec nat8; Err : text };
+type Result_4 = variant { Ok : List; Err : text };
+type Result_5 = variant { Ok : opt vec nat8; Err : text };
 type Signature = record {
   r : vec nat8;
   s : vec nat8;
@@ -63,9 +64,9 @@ service : {
   is_valid_signature : (vec nat8) -> (Result_1) query;
   keccak256 : (vec nat8) -> (vec nat8) query;
   parse_transaction : (vec nat8) -> (Result_2) query;
-  pub_to_address : (vec nat8) -> (Result) query;
-  recover_public_key : (vec nat8, vec nat8) -> (Result) query;
-  rlp_decode : (vec nat8) -> (Result_3) query;
-  rlp_encode : (List) -> (Result) query;
-  verify_proof : (vec nat8, vec nat8, vec vec nat8) -> (Result_4) query;
+  pub_to_address : (vec nat8) -> (Result_3) query;
+  recover_public_key : (vec nat8, vec nat8) -> (Result_3) query;
+  rlp_decode : (vec nat8) -> (Result_4) query;
+  rlp_encode : (List) -> (Result_3) query;
+  verify_proof : (vec nat8, vec nat8, vec vec nat8) -> (Result_5) query;
 }

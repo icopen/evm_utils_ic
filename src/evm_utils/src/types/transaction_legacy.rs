@@ -59,7 +59,7 @@ impl Decodable for TransactionLegacy {
                 item.chain_id = v;
             }
 
-            if r.len() > 0 {
+            if !r.is_empty() {
                 let signature = Signature::create(&item, rlp, rlp.as_raw(), 6)
                     .map_err(|_| rlp::DecoderError::Custom("Error while recovering signature"))?;
 
@@ -116,7 +116,7 @@ mod test {
 
     #[test]
     fn decode_legacy_no_signature_transaction() -> Result<(), Box<dyn Error>> {
-        let data =  "e10182271082271094e94f1fa4f27d9d288ffea234bb62e1fbc086ca0c8080018080";
+        let data = "e10182271082271094e94f1fa4f27d9d288ffea234bb62e1fbc086ca0c8080018080";
         let data = hex::decode(data)?;
 
         let tx = Transaction::decode(&data)?;
