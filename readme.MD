@@ -19,7 +19,7 @@ Link [https://icdevs.org/bounties/2023/01/09/28-EVM-Utility-Canister-Rust.html]
 
 ## EVM Verification
 
-- [x] `verify_proof` - Verifies if send hash is a part of a tree, returns retrieved data from proof. You need to send a root hash, proof and key.
+- [x] `verify_proof` - Verifies if send hash is a part of a tree, returns retrieved data from proof. You need to send a root hash, proof and key. Return is RLP encoded, so you need to decode it to check the output.
 
 ## Hashing
 
