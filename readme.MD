@@ -4,6 +4,8 @@ This canister "EVM Utility Canister" provides multiple functions required to cre
 
 Link [https://icdevs.org/bounties/2023/01/09/28-EVM-Utility-Canister-Rust.html]
 
+Tha canister is published and can be reached under: ubgoy-tiaaa-aaaah-qc7qq-cai
+
 # Functions
 
 ## RLP
