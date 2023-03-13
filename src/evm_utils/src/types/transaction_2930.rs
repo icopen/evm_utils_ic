@@ -5,17 +5,18 @@ use rlp::{Decodable, RlpStream};
 use super::{
     access_list::AccessList,
     address::Address,
+    num::U256,
     signature::{Signable, Signature},
 };
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Transaction2930 {
     pub chain_id: u64,
-    pub nonce: u64,
-    pub gas_price: u64,
-    pub gas_limit: u64,
+    pub nonce: U256,
+    pub gas_price: U256,
+    pub gas_limit: U256,
     pub to: Address,
-    pub value: u64,
+    pub value: U256,
     pub data: Vec<u8>,
     pub access_list: Vec<AccessList>,
     pub sign: Option<Signature>,
@@ -31,14 +32,14 @@ impl Decodable for Transaction2930 {
         }
 
         let chain_id: u64 = rlp.val_at(0)?;
-        let nonce: u64 = rlp.val_at(1)?;
+        let nonce: U256 = rlp.val_at(1)?;
 
-        let gas_price: u64 = rlp.val_at(2)?;
-        let gas_limit: u64 = rlp.val_at(3)?;
+        let gas_price: U256 = rlp.val_at(2)?;
+        let gas_limit: U256 = rlp.val_at(3)?;
 
         let to = rlp.val_at(4)?;
 
-        let value: u64 = rlp.val_at(5)?;
+        let value: U256 = rlp.val_at(5)?;
         let data: Vec<u8> = rlp.val_at(6)?;
         let access_list = rlp.list_at(7)?;
 

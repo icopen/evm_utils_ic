@@ -1,12 +1,12 @@
 use ic_cdk::export::candid::{CandidType, Deserialize};
 use rlp::{Decodable, Encodable, RlpStream};
 
-use super::{address::Address, num::U256};
+use super::{address::Address, num::H256};
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct AccessList {
     pub address: Address,
-    pub storage_keys: Vec<U256>,
+    pub storage_keys: Vec<H256>,
 }
 
 impl Decodable for AccessList {

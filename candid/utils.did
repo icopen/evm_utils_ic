@@ -27,36 +27,36 @@ type Transaction = variant {
 };
 type Transaction1559 = record {
   to : vec nat8;
-  value : nat64;
-  max_priority_fee_per_gas : nat64;
+  value : vec nat8;
+  max_priority_fee_per_gas : vec nat8;
   data : vec nat8;
   sign : opt Signature;
-  max_fee_per_gas : nat64;
+  max_fee_per_gas : vec nat8;
   chain_id : nat64;
-  nonce : nat64;
-  gas_limit : nat64;
+  nonce : vec nat8;
+  gas_limit : vec nat8;
   access_list : vec AccessList;
 };
 type Transaction2930 = record {
   to : vec nat8;
-  value : nat64;
+  value : vec nat8;
   data : vec nat8;
   sign : opt Signature;
   chain_id : nat64;
-  nonce : nat64;
-  gas_limit : nat64;
+  nonce : vec nat8;
+  gas_limit : vec nat8;
   access_list : vec AccessList;
-  gas_price : nat64;
+  gas_price : vec nat8;
 };
 type TransactionLegacy = record {
   to : vec nat8;
-  value : nat64;
+  value : vec nat8;
   data : vec nat8;
   sign : opt Signature;
   chain_id : nat64;
-  nonce : nat64;
-  gas_limit : nat64;
-  gas_price : nat64;
+  nonce : vec nat8;
+  gas_limit : vec nat8;
+  gas_price : vec nat8;
 };
 service : {
   create_transaction : (Transaction) -> (Result) query;

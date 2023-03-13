@@ -4,17 +4,18 @@ use rlp::{Decodable, RlpStream};
 
 use super::{
     address::Address,
+    num::U256,
     signature::{Signable, Signature},
 };
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct TransactionLegacy {
     pub chain_id: u64,
-    pub nonce: u64,
-    pub gas_price: u64,
-    pub gas_limit: u64,
+    pub nonce: U256,
+    pub gas_price: U256,
+    pub gas_limit: U256,
     pub to: Address,
-    pub value: u64,
+    pub value: U256,
     pub data: Vec<u8>,
     pub sign: Option<Signature>,
 }
@@ -28,14 +29,14 @@ impl Decodable for TransactionLegacy {
             ));
         }
 
-        let nonce: u64 = rlp.val_at(0)?;
+        let nonce: U256 = rlp.val_at(0)?;
 
-        let gas_price: u64 = rlp.val_at(1)?;
-        let gas_limit: u64 = rlp.val_at(2)?;
+        let gas_price: U256 = rlp.val_at(1)?;
+        let gas_limit: U256 = rlp.val_at(2)?;
 
         let to = rlp.val_at(3)?;
 
-        let value: u64 = rlp.val_at(4)?;
+        let value: U256 = rlp.val_at(4)?;
         let data: Vec<u8> = rlp.val_at(5)?;
 
         let mut item = Self {

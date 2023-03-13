@@ -5,18 +5,19 @@ use rlp::{Decodable, RlpStream};
 use super::{
     access_list::AccessList,
     address::Address,
+    num::U256,
     signature::{Signable, Signature},
 };
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Transaction1559 {
     pub chain_id: u64,
-    pub nonce: u64,
-    pub max_priority_fee_per_gas: u64,
-    pub gas_limit: u64,
-    pub max_fee_per_gas: u64,
+    pub nonce: U256,
+    pub max_priority_fee_per_gas: U256,
+    pub gas_limit: U256,
+    pub max_fee_per_gas: U256,
     pub to: Address,
-    pub value: u64,
+    pub value: U256,
     pub data: Vec<u8>,
     pub access_list: Vec<AccessList>,
     pub sign: Option<Signature>,
@@ -32,15 +33,15 @@ impl Decodable for Transaction1559 {
         }
 
         let chain_id: u64 = rlp.val_at(0)?;
-        let nonce: u64 = rlp.val_at(1)?;
+        let nonce: U256 = rlp.val_at(1)?;
 
-        let max_priority_fee_per_gas: u64 = rlp.val_at(2)?;
-        let max_fee_per_gas: u64 = rlp.val_at(3)?;
-        let gas_limit: u64 = rlp.val_at(4)?;
+        let max_priority_fee_per_gas: U256 = rlp.val_at(2)?;
+        let max_fee_per_gas: U256 = rlp.val_at(3)?;
+        let gas_limit: U256 = rlp.val_at(4)?;
 
         let to = rlp.val_at(5)?;
 
-        let value: u64 = rlp.val_at(6)?;
+        let value: U256 = rlp.val_at(6)?;
         let data: Vec<u8> = rlp.val_at(7)?;
         let access_list = rlp.list_at(8)?;
 
@@ -164,8 +165,8 @@ mod test {
         let encoded = tx.encode(false).to_vec();
         let encoded_hex = format!("0x{}", hex::encode(&encoded));
 
-        assert_eq!(data, encoded);
         assert_eq!(data_hex, &encoded_hex);
+        assert_eq!(data, encoded);
 
         match tx {
             Transaction::EIP1559(x) => {
