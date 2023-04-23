@@ -16,6 +16,16 @@ fn create_transaction(data: Transaction) -> Result<(Vec<u8>, U256), String> {
     Ok((raw.to_vec(), hash))
 }
 
+/// Encodes transaction in rlp, including the signature data
+#[query]
+#[candid_method(query)]
+fn encode_signed_transaction(data: Transaction) -> Result<(Vec<u8>, U256), String> {
+    let raw = data.encode(false);
+    let hash = keccak256(&[&raw]);
+
+    Ok((raw.to_vec(), hash))
+}
+
 /// Parses raw transaction, supports Legacy, EIP1559, EIP2930
 #[query]
 #[candid_method(query)]

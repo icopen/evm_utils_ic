@@ -60,6 +60,7 @@ type TransactionLegacy = record {
 };
 service : {
   create_transaction : (Transaction) -> (Result) query;
+  encode_signed_transaction : (Transaction) -> (Result) query;
   is_valid_public : (vec nat8) -> (Result_1) query;
   is_valid_signature : (vec nat8) -> (Result_1) query;
   keccak256 : (vec nat8) -> (vec nat8) query;
