@@ -1,22 +1,25 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
-
 import fs from 'fs';
 import fetch, { Headers } from 'node-fetch'
+
+import { TestContext } from 'lightic';
+import { Principal } from '@dfinity/principal';
+
+let context = undefined;
 
 if (!globalThis.fetch) {
     globalThis.fetch = fetch
     globalThis.Headers = Headers
 }
 
-
-// export const idlFactory = ({ IDL }) => {
-//     return IDL.Service({
-//         __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ["query"]),
-//     });
-// };
-// export const init = ({ IDL }) => {
-//     return [];
-// };
+export async function initCanisters() {
+    if (context !== undefined) return;
+    context = new TestContext();
+    let id = getCanisterId(false, "evm_utils");
+    await context.deploy(".dfx/local/canisters/evm_utils/evm_utils.wasm", {
+        id: Principal.from(id),
+        candid: ".dfx/local/canisters/evm_utils/evm_utils.did"
+    })
+}
 
 
 export function getCanisterId(useProd, canister) {
@@ -44,27 +47,12 @@ export async function getIdlFactory(canisterName) {
 
 //Returns actor for token canister
 export async function getActor(useProd, canisterName) {
+    await initCanisters();
 
-    let httpAgent = null;
+
+    // let httpAgent = null;
     let canisterId = getCanisterId(useProd, canisterName);
-
-    if (useProd) {
-        var host = "https://boundary.ic0.app/"; //ic
-
-        httpAgent = new HttpAgent({ host });
-    } else {
-        const host = "http://127.0.0.1:4943"; //local
-
-        httpAgent = new HttpAgent({ host });
-        httpAgent.fetchRootKey();
-    }
-
-    let idlFactory = await getIdlFactory(canisterName);
-
-    const actor = Actor.createActor(idlFactory, {
-        agent: httpAgent,
-        canisterId: canisterId,
-    });
+    let actor = context.getAgent(Principal.anonymous()).getActor(canisterId);
 
     return actor;
 }
