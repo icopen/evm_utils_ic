@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { expect } from "@jest/globals";
 
 
-const can = await getActor(false, "evm_utils");
+const can = await getActor();
 
 test("rlp_encode", async () => {
     let item = {

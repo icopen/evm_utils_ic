@@ -5,7 +5,7 @@ import { expect } from "@jest/globals";
 import fs from "fs";
 import { Trie } from "@ethereumjs/trie";
 
-const can = await getActor(false, "evm_utils");
+const can = await getActor();
 
 
 test("verify_proof", async () => {

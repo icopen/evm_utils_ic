@@ -20,6 +20,9 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "build": "cargo build --release --target wasm32-unknown-unknown"
+    "build": "cargo build --release --target wasm32-unknown-unknown",
+    "dfx:run": "USE_DFX=true yarn test",
+    "dfx:test": "npm run dfx:start && npm run dfx:run && dfx stop",
+    "dfx:start": "dfx stop && dfx start --clean --background && dfx deploy"
   }
 }

@@ -3,7 +3,7 @@ import { BigNumber, ethers } from "ethers";
 import { expect } from "@jest/globals";
 
 
-const can = await getActor(false, "evm_utils");
+const can = await getActor();
 
 test("create_transaction", async () => {
     let arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];

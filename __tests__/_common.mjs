@@ -3,6 +3,8 @@ import fetch, { Headers } from 'node-fetch'
 
 import { TestContext } from 'lightic';
 import { Principal } from '@dfinity/principal';
+import { HttpAgent, Actor } from '@dfinity/agent';
+import { idlFactory } from './evm_utils.did';
 
 let context = undefined;
 
@@ -18,10 +20,23 @@ export async function initCanisters() {
 }
 
 //Returns actor for token canister
-export async function getActor(useProd, canisterName) {
-    let canister = await initCanisters();
+export async function getActor() {
+    if (process.env.USE_DFX !== undefined) {
+        let agent = new HttpAgent({
+            host: 'http://127.0.0.1:4943'
+        })
+        await agent.fetchRootKey()
 
-    let actor = context.getAgent(Principal.anonymous()).getActor(canister);
+        let actor = Actor.createActor(idlFactory, {
+            agent: agent,
+            canisterId: 'rrkah-fqaaa-aaaaa-aaaaq-cai',
+        });
 
-    return actor;
+        return actor;
+    } else {
+        let canister = await initCanisters();
+        let actor = context.getAgent(Principal.anonymous()).getActor(canister);
+
+        return actor;
+    }
 }
