@@ -19,6 +19,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "build": "cargo build --release --target wasm32-unknown-unknown"
   }
 }

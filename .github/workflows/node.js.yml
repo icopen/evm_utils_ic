@@ -26,6 +26,9 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: Wasm32
+      run: rustup target add wasm32-unknown-unknown
     - run: npm i yarn
     - run: yarn
-    - run: npm test
+    - run: yarn build
+    - run: yarn test
